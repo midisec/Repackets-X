@@ -1,5 +1,7 @@
 import requests
 import sys
+import urllib.parse
+
 
 class BpParser(object):
     def __init__(self, msg):
@@ -18,7 +20,7 @@ class BpParser(object):
         if self.method not in support_method:
             print("[!] The {} method is not support".format(self.method))
             sys.exit()
-        headers_key = ["User-Agent", "Accept", "Accept-Language", "Accept-Encoding", "DNT", "X-Forwarded-For", "Connection", "Cookie", "Upgrade-Insecure-Requests", "Pragma", "Cache-Control"]
+        headers_key = ["User-Agent", "Accept", "Accept-Language", "Accept-Encoding", "Referer", "DNT", "X-Forwarded-For", "Connection", "Cookie", "Upgrade-Insecure-Requests", "Content-Type", "Content-Length", "Pragma", "Cache-Control"]
         for m in self.msg:
             if m.split(" ")[0][:-1] in headers_key:
                 self.headers[m.split(" ")[0][:-1]] = " ".join(m.split(" ")).replace(m.split(" ")[0], "").strip()
@@ -32,22 +34,22 @@ class BpParser(object):
             # print(self.msg[self.location])
             if self.msg[self.location].split("&"):
                 for echo in self.msg[self.location].split("&"):
-                    self.data[echo.split("=")[0]] = echo.split("=")[1]
+                    self.data[urllib.parse.unquote(echo.split("=")[0].replace("+", " "))] = urllib.parse.unquote(echo.split("=")[1].replace("+", " "))
             else:
-                self.data[self.msg[self.location].split("=")[0]] = self.msg[self.location].split("=")[1]
+                self.data[urllib.parse.unquote(self.msg[self.location].split("=")[0].replace("+", " "))] = urllib.parse.unquote(self.msg[self.location].split("=")[1].replace("+", " "))
 
     def to_py(self):
         __python_get_code = """
 import requests
 headers = {}
-resp = requests.get(url={}, headers=headers)
+resp = requests.get(url="{}", headers=headers)
 print(resp.text)
 """
         __python_post_code = """
 import requests
 headers = {}
 data = {}
-resp = requests.post(url={}, headers=headers, data=data)
+resp = requests.post(url="{}", headers=headers, data=data)
 print(resp.text)        
         """
         if self.method == "GET":
@@ -74,6 +76,7 @@ print(resp.text)
                     return resp.text
                 elif self.method == "POST":
                     resp = requests.post(url="{}".format(self.protocol_header + url + self.path), headers=self.headers, data=self.data, timeout=3)
+                    print(resp.status_code)
                     print(resp.text)
                     return resp.text
             except Exception as e:
@@ -95,5 +98,5 @@ if __name__ == '__main__':
     with open('demo.txt', 'r') as f:
         bp = BpParser(f.readlines())
         # bp.run()
-        # print(bp.to_py())
+        print(bp.to_py())
         bp.start()
