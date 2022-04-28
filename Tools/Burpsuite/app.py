@@ -3,13 +3,13 @@ import sys
 import re
 import urllib.parse
 from requests_toolbelt.multipart.encoder import MultipartEncoder
-
+from Common.module.request.headers.keys import read_default_header_keys, read_extend_header_keys
 
 class BpParser(object):
     def __init__(self, msg):
         self.msg = msg
         self.method = self.msg[0].split(" ")[0]
-        self.file_upload = False
+        self.file_upload_flag = False
         self.path = self.msg[0].split(" ")[1]
         self.protocol = self.msg[0].split(" ")[2].strip()
         if self.protocol == "HTTP/1.1":
@@ -23,7 +23,9 @@ class BpParser(object):
         if self.method not in support_method:
             print("[!] The {} method is not support".format(self.method))
             sys.exit()
-        headers_key = ["User-Agent", "Accept", "Accept-Language", "Accept-Encoding", "Referer", "DNT", "X-Forwarded-For", "Connection", "Cookie", "Upgrade-Insecure-Requests", "Content-Type", "Content-Length", "Pragma", "Cache-Control"]
+        # headers_key = ["User-Agent", "Accept", "Accept-Language", "Accept-Encoding", "Referer", "DNT", "X-Forwarded-For", "Connection", "Cookie", "Upgrade-Insecure-Requests", "Content-Type", "Content-Length", "Pragma", "Cache-Control"]
+        headers_key = []
+        headers_key = headers_key + read_default_header_keys() + read_extend_header_keys()
         for m in self.msg:
             if m.split(" ")[0][:-1] in headers_key:
                 self.headers[m.split(" ")[0][:-1]] = " ".join(m.split(" ")).replace(m.split(" ")[0], "").strip()
