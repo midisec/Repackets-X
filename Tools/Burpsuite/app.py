@@ -5,6 +5,7 @@ import urllib.parse
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 from Common.module.request.headers.keys import read_default_header_keys, read_extend_header_keys
 
+
 class BpParser(object):
     def __init__(self, msg):
         self.msg = msg
@@ -36,6 +37,9 @@ class BpParser(object):
                 if self.msg[i].strip() == "":
                     self.location = i+1
                     break
+
+            if self.location == len(self.msg):
+                self.location = self.location-1
 
             # print(self.msg[self.location])
             if self.msg[self.location].startswith("---"):
@@ -79,11 +83,16 @@ class BpParser(object):
             else:
                 # single row situation
                 # just post some data
-                if self.msg[self.location].split("&"):
-                    for echo in self.msg[self.location].split("&"):
-                        self.data[urllib.parse.unquote(echo.split("=")[0].replace("+", " "))] = urllib.parse.unquote(echo.split("=")[1].replace("+", " "))
+
+                # check for empty POST content
+                if self.msg[self.location].strip() == "":
+                    pass
                 else:
-                    self.data[urllib.parse.unquote(self.msg[self.location].split("=")[0].replace("+", " "))] = urllib.parse.unquote(self.msg[self.location].split("=")[1].replace("+", " "))
+                    if self.msg[self.location].split("&"):
+                        for echo in self.msg[self.location].split("&"):
+                            self.data[urllib.parse.unquote(echo.split("=")[0].replace("+", " "))] = urllib.parse.unquote(echo.split("=")[1].replace("+", " "))
+                    else:
+                        self.data[urllib.parse.unquote(self.msg[self.location].split("=")[0].replace("+", " "))] = urllib.parse.unquote(self.msg[self.location].split("=")[1].replace("+", " "))
 
     def to_py(self):
         __python_get_code = """
